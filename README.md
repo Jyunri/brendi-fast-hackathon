@@ -2,19 +2,16 @@
 Mini hackathon para engenheiros de software seniores com foco em construir a melhor experiência de análise de gestão para donos de restaurantes Brendi.
 
 ## 🎯 Objetivo
-Desenvolver um dashboard web com gráficos e menus, integrado a um agente LLM para análise de dados brutos.
+Desenvolver um dashboard web integrado a um agente LLM para análise de dados brutos.
 
 ## 📦 Entregáveis
-Dashboard Web funcional
-
+- Dashboard Web funcional
 - Experiência de chat com agente LLM
 - Deploy ativo
-- Repositório com README claro
+- Código em uma branch desse repositório com um README apresentativo do projetos e das principais decisões técnicas
 
 ## 🗂 Dados
-Base raw da Bambinella (JSON)
-
-- Sem formatação prévia
+Base raw da loja Bambinella (JSON) sem formatação prévia
 
 ## 🛠 Stack
 Livre escolha de linguagem, framework e infraestrutura
