@@ -1,27 +1,64 @@
-# 🧠 Gestão Web + Agent · Hackathon Brendi
-Mini hackathon para engenheiros de software seniores com foco em construir a melhor experiência de análise de gestão para donos de restaurantes Brendi.
+# Nuxt Dashboard Template
 
-## 🎯 Objetivo
-Desenvolver um dashboard web integrado a um agente LLM para análise de dados brutos.
+[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 
-## 📦 Entregáveis
-- Dashboard Web funcional
-- Experiência de chat com agente LLM
-- Deploy ativo
-- Código em uma branch desse repositório com um README apresentativo do projetos e das principais decisões técnicas
+Get started with the Nuxt dashboard template with multiple pages, collapsible sidebar, keyboard shortcuts, light & dark more, command palette and more, powered by [Nuxt UI](https://ui.nuxt.com).
 
-## 🗂 Dados
-Base raw da loja Bambinella (JSON) sem formatação prévia
+- [Live demo](https://dashboard-template.nuxt.dev/)
+- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
 
-## 🛠 Stack
-Livre escolha de linguagem, framework e infraestrutura
+<a href="https://dashboard-template.nuxt.dev/" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/dashboard-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png">
+    <img alt="Nuxt Dashboard Template" src="https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png">
+  </picture>
+</a>
 
-Tokens disponíveis para: OpenAI, Anthropic, Grok, Gemini
+> The dashboard template for Vue is on https://github.com/nuxt-ui-templates/dashboard-vue.
 
-## 🧪 Avaliação
-- **Produtividade** → entregar um produto funcionando bem, com robustez, features, etc, na infra que precisar pra fazer isso rodar
-- Qualidade técnica do **código** → o quanto tem problemas de código complexo, sem seguir princípios de responsabilidade única, etc
-    - Baixo cognitive loading: tem que ser fácil bater o olho na estrutura de pastas/arquivos/funções, saber o que está acontecendo e se achar no projeto
-    - Baixo overengineering: abstrações enxutas e limpas, sem focar muito em edge cases do futuro → foco em tech simples pra produto funcional
-- Boa escolha de **tecnologias** e **arquitetura escalável**: o racional das decisões técnicas tem que ficar o mais clara possível, sem escolha por hype ou sem saber o porquê
-- Qualidade de construção do **produto** → o quanto o produto realmente é bom e encanta quem o utiliza
+## Quick Start
+
+```bash [Terminal]
+npm create nuxt@latest -- -t github:nuxt-ui-templates/dashboard
+```
+
+## Deploy your own
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=dashboard&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fdashboard&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fdashboard-dark.png&demo-url=https%3A%2F%2Fdashboard-template.nuxt.dev%2F&demo-title=Nuxt%20Dashboard%20Template&demo-description=A%20dashboard%20template%20with%20multi-column%20layout%20for%20building%20sophisticated%20admin%20interfaces.)
+
+## Setup
+
+Make sure to install the dependencies:
+
+```bash
+pnpm install
+```
+
+## Development Server
+
+Start the development server on `http://localhost:3000`:
+
+```bash
+pnpm dev
+```
+
+## Production
+
+Build the application for production:
+
+```bash
+pnpm build
+```
+
+Locally preview production build:
+
+```bash
+pnpm preview
+```
+
+Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Renovate integration
+
+Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
