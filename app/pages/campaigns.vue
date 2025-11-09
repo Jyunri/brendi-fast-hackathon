@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Campaign } from '~/types'
 import CampaignInsight from '~/components/campaings/CampaignInsight.vue'
-import CampaignAssistantChat from '~/components/campaings/CampaignAssistantChat.vue'
+import AssistantChat from '~/components/assistant/AssistantChat.vue'
 
 const { data, pending, error, refresh } = await useFetch<Campaign[]>('/api/campagins', {
   default: () => [],
@@ -491,6 +491,14 @@ const selectedMessage = computed(() =>
     </template>
     </UDashboardPanel>
 
-    <CampaignAssistantChat />
+    <AssistantChat
+      endpoint="/api/campaign-assistant"
+      title="Copiloto de Campanhas"
+      subtitle="Conte o objetivo e eu monto um plano"
+      welcome-message="Oi! Analiso suas campanhas com resultados recentes e te ajudo a priorizar próximos passos. Qual é o objetivo agora?"
+      placeholder="Ex.: quero reengajar clientes curiosos com voucher agressivo"
+      button-label="Gerar sugestão"
+      tooltip="Copiloto de campanhas"
+    />
   </div>
 </template>

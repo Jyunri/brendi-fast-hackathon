@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createHash } from 'node:crypto'
+import { createError } from 'h3'
 import type { Insight } from '~/types'
 import type { CampaignResultSummary } from './campaigns'
 
@@ -38,21 +39,41 @@ const ASSISTANT_SYSTEM_PROMPT = `Você é um estrategista de CRM e growth.
 Ajude times de marketing a interpretar campanhas recentes e gere recomendações práticas e curtas.
 Mostre empatia profissional, escreva sempre em português e encerre com próximos passos objetivos.`
 
+const TOKEN_CHAR_RATIO = 4 // aproximação: ~4 caracteres por token
+const DEFAULT_TOKEN_LIMIT = 30000
+
+function ensureTokenLimit(
+  text: string,
+  maxTokens = DEFAULT_TOKEN_LIMIT,
+  label = 'LLM prompt'
+): string {
+  const approxTokens = Math.ceil(text.length / TOKEN_CHAR_RATIO)
+  if (approxTokens > maxTokens) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `${label} excedeu o limite aproximado de ${approxTokens}/${maxTokens} tokens. Reduza o número de registros e tente novamente.`
+    })
+  }
+  return text
+}
+
 function buildPrompt(summaries: CampaignResultSummary[]): string {
-  return [
+  const prompt = [
     'Dados recentes das campanhas (ordenados por atualização mais recente):',
     JSON.stringify(summaries, null, 2),
     'Retorne apenas um JSON com o formato:',
     '{ "insights": [{ "id": string, "title": string, "metric": string, "summary": string, "recommendation": string, "evidence": string, "severity": "low" | "medium" | "high" }, ...] }',
     'IMPORTANTE: Retorne entre 3 e 5 insights distintos, cada um com um foco diferente.'
   ].join('\n\n')
+
+  return ensureTokenLimit(prompt, DEFAULT_TOKEN_LIMIT, 'Resumo das campanhas')
 }
 
 function buildAssistantPrompt(
   summaries: CampaignResultSummary[],
   context: string | null
 ): string {
-  return [
+  const prompt = [
     'Você está analisando campanhas recentes com os seguintes dados resumidos:',
     JSON.stringify(summaries.slice(0, 80), null, 2),
     context
@@ -61,6 +82,8 @@ function buildAssistantPrompt(
     'Responda com dois parágrafos curtos explicando a oportunidade e possíveis riscos.',
     'Em seguida, inclua uma lista numerada com até 3 próximos passos acionáveis.'
   ].join('\n\n')
+
+  return ensureTokenLimit(prompt, DEFAULT_TOKEN_LIMIT, 'Solicitação do copiloto de campanhas')
 }
 
 function sanitizeLLMContent(content: string): string {
@@ -190,6 +213,9 @@ export async function requestCampaignInsightFromLLM(
     return insights
   } catch (error) {
     console.error('LLM insights generation failed:', error)
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      throw error
+    }
     return []
   }
 }
@@ -244,6 +270,9 @@ export async function requestCampaignAssistantResponse(
     return sanitizeLLMContent(content)
   } catch (error) {
     console.error('LLM assistant generation failed:', error)
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      throw error
+    }
     return null
   }
 }

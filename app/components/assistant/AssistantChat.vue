@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import type { CampaignAssistantResponse } from '~/types'
+import type { AssistantResponse } from '~/types'
 
 type ChatRole = 'assistant' | 'user'
 
@@ -11,6 +11,24 @@ interface ChatMessage {
   timestamp: string
 }
 
+const props = withDefaults(defineProps<{
+  endpoint: string
+  title?: string
+  subtitle?: string
+  welcomeMessage?: string
+  placeholder?: string
+  buttonLabel?: string
+  tooltip?: string
+}>(), {
+  endpoint: '/api/campaign-assistant',
+  title: 'Assistente IA',
+  subtitle: 'Como posso ajudar?',
+  welcomeMessage: 'Oi! Posso analisar suas campanhas recentes. Me conte o contexto ou objetivo e eu compartilho próximos passos rápidos.',
+  placeholder: 'Conte o objetivo, desafio ou resultado desejado...',
+  buttonLabel: 'Pedir análise',
+  tooltip: 'Falar com o copiloto'
+})
+
 const isOpen = ref(false)
 const contextInput = ref('')
 const isSending = ref(false)
@@ -20,7 +38,7 @@ const chatBody = ref<HTMLElement | null>(null)
 const messages = ref<ChatMessage[]>([{
   id: 'welcome',
   role: 'assistant',
-  content: 'Oi! Posso analisar suas campanhas recentes. Me conte o contexto ou objetivo e eu compartilho próximos passos rápidos.',
+  content: props.welcomeMessage,
   timestamp: new Date().toISOString()
 }])
 
@@ -59,7 +77,7 @@ const sendMessage = async () => {
   })
 
   try {
-    const response = await $fetch<CampaignAssistantResponse>('/api/campaign-assistant', {
+    const response = await $fetch<AssistantResponse>(props.endpoint, {
       method: 'POST',
       body: { context }
     })
@@ -103,10 +121,10 @@ const onKeydown = (event: KeyboardEvent) => {
           <div class="flex items-center justify-between gap-2">
             <div>
               <p class="text-xs uppercase text-muted">
-                @Jimy
+                {{ title }}
               </p>
               <p class="text-sm font-semibold">
-                Como posso ajudar?
+                {{ subtitle }}
               </p>
             </div>
             <UButton
@@ -141,7 +159,7 @@ const onKeydown = (event: KeyboardEvent) => {
           <UTextarea
             v-model="contextInput"
             :rows="3"
-            placeholder="Conte o objetivo, desafio ou resultado desejado..."
+            :placeholder="placeholder"
             :maxlength="600"
             @keydown="onKeydown"
           />
@@ -152,7 +170,7 @@ const onKeydown = (event: KeyboardEvent) => {
             :disabled="!canSend"
             @click="sendMessage"
           >
-            Pedir análise
+            {{ buttonLabel }}
           </UButton>
           <UAlert
             v-if="errorMessage"
@@ -169,7 +187,7 @@ const onKeydown = (event: KeyboardEvent) => {
       </UCard>
     </Transition>
 
-    <UTooltip text="Falar com o copiloto">
+    <UTooltip :text="tooltip">
       <UButton
         icon="i-lucide-message-circle"
         size="lg"
@@ -177,7 +195,7 @@ const onKeydown = (event: KeyboardEvent) => {
         class="rounded-full shadow-xl"
         @click="handleToggle"
       >
-        Como posso te ajudar?
+        Assistente
       </UButton>
     </UTooltip>
   </div>

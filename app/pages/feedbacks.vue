@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { upperFirst } from 'scule'
 import type { Feedback } from '~/types'
+import AssistantChat from '~/components/assistant/AssistantChat.vue'
 
 type RatingFilter = 'all' | 'positive' | 'neutral' | 'negative'
 
@@ -146,7 +147,8 @@ function formatDateTime(date: string | null | undefined) {
 </script>
 
 <template>
-  <UDashboardPanel id="feedbacks">
+  <div class="relative">
+    <UDashboardPanel id="feedbacks">
     <template #header>
       <UDashboardNavbar title="Feedbacks">
         <template #leading>
@@ -276,5 +278,16 @@ function formatDateTime(date: string | null | undefined) {
         </div>
       </section>
     </template>
-  </UDashboardPanel>
+    </UDashboardPanel>
+
+    <AssistantChat
+      endpoint="/api/feedback-assistant"
+      title="Copiloto de Feedbacks"
+      subtitle="Traduza avaliações em ações"
+      welcome-message="Oi! Estou de olho nos feedbacks mais recentes. Conte o contexto (categoria, problema ou meta) e eu te mostro onde agir."
+      placeholder="Ex.: muitos clientes reclamando da temperatura do item"
+      button-label="Analisar feedbacks"
+      tooltip="Copiloto de feedbacks"
+    />
+  </div>
 </template>

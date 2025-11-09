@@ -88,16 +88,21 @@ export interface InsightResponse {
   insight: Insight
 }
 
-export interface CampaignAssistantRequest {
+export interface AssistantRequest {
   context: string
 }
 
-export interface CampaignAssistantResponse {
+export interface AssistantResponse {
   generatedAt: string
   message: string
   usedContext: string | null
   source: 'llm' | 'fallback'
 }
+
+export type CampaignAssistantRequest = AssistantRequest
+export type CampaignAssistantResponse = AssistantResponse
+export type FeedbackAssistantRequest = AssistantRequest
+export type FeedbackAssistantResponse = AssistantResponse
 
 export interface CampaignDateValue {
   _date?: boolean

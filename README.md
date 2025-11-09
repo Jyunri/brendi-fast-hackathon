@@ -31,7 +31,7 @@ Vercel
 
 ### Chat Assistant
 
-- Utiliza LLM para gerar respostas baseadas no contexto fornecido pelo usuario
+- Utiliza LLM para gerar respostas baseadas no contexto fornecido pelo usuario (disponivel em Feedbacks e Campaigns)
 
 
 ## Dados
