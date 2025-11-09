@@ -40,6 +40,7 @@ export default defineEventHandler(async (event): Promise<CustomerSegmentationRes
     generatedAt: new Date().toISOString(),
     usedContext: context,
     source: llmResult ? 'llm' : 'fallback',
-    ...payload
+    ...payload,
+    profiles
   }
 })

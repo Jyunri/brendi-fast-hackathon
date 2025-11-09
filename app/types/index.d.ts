@@ -88,6 +88,21 @@ export interface InsightResponse {
   insight: Insight
 }
 
+export interface CustomerFeedbackProfileTopCategory {
+  category: string
+  count: number
+  averageRating: number
+}
+
+export interface CustomerFeedbackProfile {
+  storeConsumerId: string
+  totalFeedbacks: number
+  averageRating: number
+  lastFeedbackAt: string | null
+  topCategories: CustomerFeedbackProfileTopCategory[]
+  sampleComments: string[]
+}
+
 export interface AssistantRequest {
   context: string
 }
@@ -190,6 +205,7 @@ export interface CustomerSegment {
   signals: string[]
   recommendedActions: string[]
   priority: CustomerSegmentPriority
+  memberIds: string[]
 }
 
 export interface CustomerSegmentationPayload {
@@ -201,4 +217,5 @@ export interface CustomerSegmentationResponse extends CustomerSegmentationPayloa
   generatedAt: string
   usedContext: string | null
   source: 'llm' | 'fallback'
+  profiles: CustomerFeedbackProfile[]
 }

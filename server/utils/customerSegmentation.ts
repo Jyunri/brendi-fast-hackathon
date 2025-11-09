@@ -1,23 +1,11 @@
 import { createError } from 'h3'
 import { z } from 'zod'
 import type {
+  CustomerFeedbackProfile,
   CustomerSegment,
   CustomerSegmentationPayload,
   Feedback
 } from '~/types'
-
-export interface CustomerFeedbackProfile {
-  storeConsumerId: string
-  totalFeedbacks: number
-  averageRating: number
-  lastFeedbackAt: string | null
-  topCategories: Array<{
-    category: string
-    count: number
-    averageRating: number
-  }>
-  sampleComments: string[]
-}
 
 interface ProfileAccumulator {
   id: string
@@ -40,7 +28,8 @@ const RESPONSE_SEGMENT_SCHEMA = z.object({
   coverage: z.string().min(4),
   signals: z.array(z.string().min(4)).min(1).max(4),
   recommendedActions: z.array(z.string().min(4)).min(1).max(4),
-  priority: z.enum(['alta', 'media', 'baixa'])
+  priority: z.enum(['alta', 'media', 'baixa']),
+  memberIds: z.array(z.string().min(1)).min(1).max(80)
 })
 
 const RESPONSE_SCHEMA = z.object({
@@ -50,6 +39,7 @@ const RESPONSE_SCHEMA = z.object({
 
 const TOKEN_CHAR_RATIO = 4
 const DEFAULT_TOKEN_LIMIT = 25000
+const MAX_LLM_MEMBER_IDS = 80
 
 const formatAverage = (value: number) => value.toFixed(1).replace('.', ',')
 
@@ -154,7 +144,8 @@ const buildSegment = (
   coverage: formatCoverage(audience.length, total),
   signals: buildSegmentSignals(audience, defaultSignal),
   recommendedActions,
-  priority
+  priority,
+  memberIds: audience.map(profile => profile.storeConsumerId)
 })
 
 export function buildCustomerFeedbackProfiles(
@@ -244,7 +235,8 @@ export function buildFallbackSegmentation(
           'Adicione um lembrete de pesquisa pós-pedido nas próximas campanhas.',
           'Ofereça cupom simbólico para quem responder rapidamente.'
         ],
-        priority: 'media'
+        priority: 'media',
+        memberIds: []
       }]
     }
   }
@@ -321,8 +313,9 @@ function buildSegmentationPrompt(
       ? `Contexto adicional do usuário: """${trimmedContext}""". Priorize segmentos que ajudem esse objetivo.`
       : 'Sem contexto adicional. Foque em padrões dos feedbacks para sugerir oportunidades de retenção.',
     'Gere entre 3 e 5 segmentos, sempre em português.',
-    'Cada segmento deve indicar um nome curto, descrição prática, cobertura em termos de porcentagem de perfis recentes, sinais observados (lista curta) e ações recomendadas (lista curta).',
-    'Retorne apenas JSON no formato: { "summary": string, "segments": [{ "id": string, "name": string, "description": string, "coverage": string, "signals": string[], "recommendedActions": string[], "priority": "alta" | "media" | "baixa" }] }.'
+    'Cada segmento deve indicar um nome curto, descrição prática, cobertura, sinais observados (lista curta) e ações recomendadas (lista curta).',
+    'Inclua também "memberIds" com os storeConsumerId (exatos) que pertencem ao segmento. Use somente IDs fornecidos na lista e limite a 80 por segmento.',
+    'Retorne apenas JSON no formato: { "summary": string, "segments": [{ "id": string, "name": string, "description": string, "coverage": string, "signals": string[], "recommendedActions": string[], "priority": "alta" | "media" | "baixa", "memberIds": string[] }] }.'
   ].join('\n\n'))
 }
 
@@ -380,7 +373,42 @@ export async function requestCustomerSegmentationFromLLM(
       return null
     }
 
-    return parsed.data
+    const validIds = new Set(profiles.map(profile => profile.storeConsumerId))
+
+    const sanitizeMemberIds = (ids: string[]): string[] => {
+      const result: string[] = []
+      const seen = new Set<string>()
+
+      for (const id of ids) {
+        const normalized = String(id).trim()
+        if (!normalized || !validIds.has(normalized) || seen.has(normalized)) {
+          continue
+        }
+        result.push(normalized)
+        seen.add(normalized)
+        if (result.length >= MAX_LLM_MEMBER_IDS) {
+          break
+        }
+      }
+
+      return result
+    }
+
+    const sanitizedSegments = parsed.data.segments
+      .map(segment => ({
+        ...segment,
+        memberIds: sanitizeMemberIds(segment.memberIds)
+      }))
+      .filter(segment => segment.memberIds.length)
+
+    if (!sanitizedSegments.length) {
+      return null
+    }
+
+    return {
+      summary: parsed.data.summary,
+      segments: sanitizedSegments
+    }
   } catch (error) {
     console.error('LLM customer segmentation generation failed:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {

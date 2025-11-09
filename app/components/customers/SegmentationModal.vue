@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type {
+  CustomerFeedbackProfile,
   CustomerSegmentationResponse,
-  CustomerSegmentPriority
+  CustomerSegmentPriority,
+  User
 } from '~/types'
 
 const open = ref(false)
@@ -10,12 +12,39 @@ const contextInput = ref('')
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
 const result = ref<CustomerSegmentationResponse | null>(null)
+const csvSegmentId = ref<string | null>(null)
+const customersById = ref<Record<string, User>>({})
+const isCustomersLoading = ref(false)
+
+const toast = useToast()
+const CSV_HEADERS = [
+  'Segmento',
+  'Customer ID',
+  'Nome',
+  'Email',
+  'Status',
+  'Localização',
+  'Média da nota',
+  'Total de feedbacks',
+  'Principais categorias',
+  'Último feedback'
+] as const
 
 const priorityMeta: Record<CustomerSegmentPriority, { label: string, color: string, icon: string }> = {
   alta: { label: 'Alta', color: 'error', icon: 'i-lucide-alert-triangle' },
   media: { label: 'Média', color: 'warning', icon: 'i-lucide-activity' },
   baixa: { label: 'Baixa', color: 'success', icon: 'i-lucide-trending-down' }
 }
+
+const profilesById = computed<Record<string, CustomerFeedbackProfile>>(() => {
+  const profiles = result.value?.profiles ?? []
+  return profiles.reduce((acc, profile) => {
+    acc[profile.storeConsumerId] = profile
+    return acc
+  }, {} as Record<string, CustomerFeedbackProfile>)
+})
+
+const hasCustomersLoaded = computed(() => Object.keys(customersById.value).length > 0)
 
 const sourceLabel = computed(() => {
   if (!result.value) return ''
@@ -45,6 +74,24 @@ const parseErrorMessage = (error: unknown) => {
   return 'Não consegui gerar a segmentação agora. Tente novamente em instantes.'
 }
 
+const ensureCustomersLoaded = async () => {
+  if (hasCustomersLoaded.value || isCustomersLoading.value) {
+    return
+  }
+
+  isCustomersLoading.value = true
+  try {
+    const entries = await $fetch<User[]>('/api/customers')
+    const mapped = entries.reduce<Record<string, User>>((acc, user) => {
+      acc[String(user.id)] = user
+      return acc
+    }, {})
+    customersById.value = mapped
+  } finally {
+    isCustomersLoading.value = false
+  }
+}
+
 const generateSegmentation = async () => {
   if (isLoading.value) return
 
@@ -69,6 +116,115 @@ const generateSegmentation = async () => {
 const openModal = () => {
   open.value = true
   resetFeedback()
+  ensureCustomersLoaded().catch(() => {})
+}
+
+const formatCategories = (profile?: CustomerFeedbackProfile) => {
+  if (!profile) return ''
+  return profile.topCategories
+    .map(category => `${category.category} (${category.count} feedbacks | média ${category.averageRating.toFixed(1)})`)
+    .join(' | ')
+}
+
+const formatAverage = (value?: number) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return ''
+  return value.toFixed(2).replace('.', ',')
+}
+
+const buildCsvRows = (segment: CustomerSegmentationResponse['segments'][number]) => {
+  const rows: Array<Record<string, string | number>> = []
+
+  for (const memberId of segment.memberIds) {
+    const customer = customersById.value[String(memberId)]
+    const profile = profilesById.value[String(memberId)]
+
+    if (!customer && !profile) {
+      continue
+    }
+
+    rows.push({
+      Segmento: segment.name,
+      ['Customer ID']: memberId,
+      Nome: customer?.name || '',
+      Email: customer?.email || '',
+      Status: customer?.status || '',
+      Localização: customer?.location || '',
+      ['Média da nota']: formatAverage(profile?.averageRating),
+      ['Total de feedbacks']: profile?.totalFeedbacks ?? '',
+      ['Principais categorias']: formatCategories(profile),
+      ['Último feedback']: profile?.lastFeedbackAt || ''
+    })
+  }
+
+  return rows
+}
+
+const convertToCsv = (rows: Array<Record<string, string | number>>) => {
+  if (!rows.length) return ''
+
+  const escapeValue = (value: string | number | null | undefined) => {
+    const content = value ?? ''
+    const stringValue = typeof content === 'string' ? content : String(content)
+    return `"${stringValue.replace(/"/g, '""')}"`
+  }
+
+  const lines = [
+    CSV_HEADERS.map(header => escapeValue(header)).join(','),
+    ...rows.map(row => CSV_HEADERS.map(header => escapeValue(row[header])).join(','))
+  ]
+
+  return lines.join('\n')
+}
+
+const downloadSegmentCsv = async (segment: CustomerSegmentationResponse['segments'][number]) => {
+  if (!segment.memberIds.length) {
+    toast.add({
+      title: 'Segmento sem clientes',
+      description: 'Este segmento ainda não possui clientes associados.',
+      color: 'warning'
+    })
+    return
+  }
+
+  csvSegmentId.value = segment.id
+
+  try {
+    await ensureCustomersLoaded()
+    const rows = buildCsvRows(segment)
+
+    if (!rows.length) {
+      throw new Error('Não encontrei dados de clientes para este segmento.')
+    }
+
+    if (typeof window === 'undefined') {
+      throw new Error('Exportação disponível apenas no navegador.')
+    }
+
+    const csvContent = convertToCsv(rows)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `segmento-${segment.id}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    toast.add({
+      title: 'CSV gerado',
+      description: `${rows.length} cliente(s) exportados para ${segment.name}.`,
+      color: 'success'
+    })
+  } catch (error) {
+    toast.add({
+      title: 'Falha ao gerar CSV',
+      description: parseErrorMessage(error),
+      color: 'error'
+    })
+  } finally {
+    csvSegmentId.value = null
+  }
 }
 </script>
 
@@ -163,7 +319,7 @@ const openModal = () => {
             :key="segment.id"
             :ui="{ body: 'space-y-3' }"
           >
-            <div class="flex items-start justify-between gap-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p class="text-xs uppercase text-muted">
                   {{ segment.coverage }}
@@ -174,15 +330,31 @@ const openModal = () => {
                 <p class="text-sm text-muted">
                   {{ segment.description }}
                 </p>
+                <p class="text-xs text-muted mt-1">
+                  {{ segment.memberIds.length }} cliente(s) no segmento.
+                </p>
               </div>
-              <UBadge
-                :color="priorityMeta[segment.priority].color"
-                variant="soft"
-                size="sm"
-                :icon="priorityMeta[segment.priority].icon"
-              >
-                {{ priorityMeta[segment.priority].label }}
-              </UBadge>
+              <div class="flex flex-col items-end gap-2">
+                <UBadge
+                  :color="priorityMeta[segment.priority].color"
+                  variant="soft"
+                  size="sm"
+                  :icon="priorityMeta[segment.priority].icon"
+                >
+                  {{ priorityMeta[segment.priority].label }}
+                </UBadge>
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-download"
+                  :loading="csvSegmentId === segment.id"
+                  :disabled="!segment.memberIds.length"
+                  @click="downloadSegmentCsv(segment)"
+                >
+                  Baixar CSV
+                </UButton>
+              </div>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2">
