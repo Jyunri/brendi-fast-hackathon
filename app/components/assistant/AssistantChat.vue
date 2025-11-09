@@ -161,6 +161,7 @@ const onKeydown = (event: KeyboardEvent) => {
             :rows="3"
             :placeholder="placeholder"
             :maxlength="600"
+            class="w-full resize-none"
             @keydown="onKeydown"
           />
           <UButton

@@ -166,8 +166,8 @@ const selectedMessage = computed(() =>
 </script>
 
 <template>
-  <div class="relative">
-    <UDashboardPanel id="campaigns">
+  <div class="relative h-full">
+    <UDashboardPanel id="campaigns" class="h-full flex flex-col" :ui="{ body: 'flex-1 overflow-y-auto min-h-0' }">
     <template #header>
       <UDashboardNavbar title="Campanhas">
         <template #leading>

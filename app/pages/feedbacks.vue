@@ -147,8 +147,8 @@ function formatDateTime(date: string | null | undefined) {
 </script>
 
 <template>
-  <div class="relative">
-    <UDashboardPanel id="feedbacks">
+  <div class="relative h-full">
+    <UDashboardPanel id="feedbacks" class="h-full flex flex-col" :ui="{ body: 'flex-1 overflow-y-auto min-h-0' }">
     <template #header>
       <UDashboardNavbar title="Feedbacks">
         <template #leading>

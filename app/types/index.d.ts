@@ -179,3 +179,26 @@ export interface CampaignResult {
   createdAt: string | null
   updatedAt: string | null
 }
+
+export type CustomerSegmentPriority = 'alta' | 'media' | 'baixa'
+
+export interface CustomerSegment {
+  id: string
+  name: string
+  description: string
+  coverage: string
+  signals: string[]
+  recommendedActions: string[]
+  priority: CustomerSegmentPriority
+}
+
+export interface CustomerSegmentationPayload {
+  summary: string
+  segments: CustomerSegment[]
+}
+
+export interface CustomerSegmentationResponse extends CustomerSegmentationPayload {
+  generatedAt: string
+  usedContext: string | null
+  source: 'llm' | 'fallback'
+}

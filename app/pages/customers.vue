@@ -187,7 +187,10 @@ const pagination = ref({
         </template>
 
         <template #right>
-          <CustomersAddModal />
+          <div class="flex items-center gap-2">
+            <CustomersSegmentationModal />
+            <CustomersAddModal />
+          </div>
         </template>
       </UDashboardNavbar>
     </template>
