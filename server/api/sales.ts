@@ -108,7 +108,6 @@ export default eventHandler(async (event) => {
         }
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 50) // Limita a 50 vendas mais recentes
 
     return sales
   } catch (error) {

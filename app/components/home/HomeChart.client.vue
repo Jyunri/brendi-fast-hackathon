@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format } from 'date-fns'
+import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format, startOfDay, startOfWeek, startOfMonth } from 'date-fns'
 import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
-import type { Period, Range } from '~/types'
+import type { Period, Range, Sale } from '~/types'
 
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 
@@ -19,17 +19,88 @@ const { width } = useElementSize(cardRef)
 
 const data = ref<DataRecord[]>([])
 
-watch([() => props.period, () => props.range], () => {
+// Busca dados reais da API
+const { data: sales } = await useAsyncData<Sale[]>('chart-sales', async () => {
+  const query = {
+    period: props.period,
+    rangeStart: props.range.start.toISOString(),
+    rangeEnd: props.range.end.toISOString()
+  }
+
+  return await $fetch<Sale[]>('/api/sales', { query })
+}, {
+  watch: [() => props.period, () => props.range],
+  default: () => []
+})
+
+// Função para normalizar a data baseado no período
+const normalizeDate = (date: Date, period: Period): Date => {
+  switch (period) {
+    case 'daily':
+      return startOfDay(date)
+    case 'weekly':
+      return startOfWeek(date, { weekStartsOn: 1 }) // Segunda-feira como início da semana
+    case 'monthly':
+      return startOfMonth(date)
+    default:
+      return startOfDay(date)
+  }
+}
+
+// Agrupa vendas por período e calcula o total
+watch([() => sales.value, () => props.period, () => props.range], () => {
+  if (!sales.value || sales.value.length === 0) {
+    // Gera datas vazias para o período
+    const dates = ({
+      daily: eachDayOfInterval,
+      weekly: eachWeekOfInterval,
+      monthly: eachMonthOfInterval
+    } as Record<Period, typeof eachDayOfInterval>)[props.period](props.range)
+
+    data.value = dates.map(date => ({ date, amount: 0 }))
+    return
+  }
+
+  // Filtra apenas vendas com status 'paid' (equivalente a 'delivered')
+  const paidSales = sales.value.filter(sale => sale.status === 'paid')
+
+  // Gera todas as datas do período
   const dates = ({
     daily: eachDayOfInterval,
     weekly: eachWeekOfInterval,
     monthly: eachMonthOfInterval
   } as Record<Period, typeof eachDayOfInterval>)[props.period](props.range)
 
-  const min = 1000
-  const max = 10000
+  // Agrupa vendas por período
+  const groupedData = new Map<string, number>()
 
-  data.value = dates.map(date => ({ date, amount: Math.floor(Math.random() * (max - min + 1)) + min }))
+  // Inicializa todos os períodos com 0
+  dates.forEach((date) => {
+    const normalized = normalizeDate(date, props.period)
+    const key = normalized.toISOString()
+    groupedData.set(key, 0)
+  })
+
+  // Soma os valores das vendas por período
+  paidSales.forEach((sale) => {
+    const saleDate = new Date(sale.date)
+    const normalized = normalizeDate(saleDate, props.period)
+    const key = normalized.toISOString()
+
+    if (groupedData.has(key)) {
+      groupedData.set(key, (groupedData.get(key) || 0) + sale.amount)
+    }
+  })
+
+  // Converte para array de DataRecord ordenado por data
+  data.value = dates.map((date) => {
+    const normalized = normalizeDate(date, props.period)
+    const key = normalized.toISOString()
+    return {
+      date: normalized,
+      amount: groupedData.get(key) || 0
+    }
+  })
 }, { immediate: true })
 
 const x = (_: DataRecord, i: number) => i
@@ -37,7 +108,8 @@ const y = (d: DataRecord) => d.amount
 
 const total = computed(() => data.value.reduce((acc: number, { amount }) => acc + amount, 0))
 
-const formatNumber = new Intl.NumberFormat('en', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format
+// Formatação em BRL para bater com a barra de stats
+const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format
 
 const formatDate = (date: Date): string => {
   return ({
