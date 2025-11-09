@@ -46,13 +46,13 @@ watch(open, (isOpen) => {
 <template>
   <UModal
     v-model:open="open"
-    title="Dica do dia"
+    title="Daily Insight"
     description="Insights acionáveis baseados no desempenho recente"
     class="sm:max-w-2xl"
   >
     <UButton
       icon="i-lucide-sparkles"
-      label="Dica do Dia"
+      label="Daily Insight"
     />
 
     <template #body>

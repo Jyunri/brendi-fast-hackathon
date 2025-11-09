@@ -6,7 +6,7 @@ import type {
   CampaignSendStatus,
   CampaignVoucher
 } from '~/types'
-import loadJson from '~/utils/loadJson'
+import { loadSeedsData } from './loadSeedsData'
 
 type DateLike = string | CampaignDateValue | null | undefined
 type NumberLike = number | string | null | undefined
@@ -215,8 +215,14 @@ export interface CampaignResultSummary {
 
 export async function getCampaignsWithResults(): Promise<Campaign[]> {
   const [campaigns, results] = await Promise.all([
-    loadJson<RawCampaign[]>('tmp/Hackathon 2025-11-09/campaigns.json'),
-    loadJson<RawCampaignResult[]>('tmp/Hackathon 2025-11-09/campaigns_results.json')
+    loadSeedsData<RawCampaign[]>(
+      'campaigns.json',
+      'tmp/Hackathon 2025-11-09/campaigns.json'
+    ),
+    loadSeedsData<RawCampaignResult[]>(
+      'campaigns_results.json',
+      'tmp/Hackathon 2025-11-09/campaigns_results.json'
+    )
   ])
 
   const resultMap = new Map<string, CampaignResult>()

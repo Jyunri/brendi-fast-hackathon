@@ -1,6 +1,5 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { Sale } from '~/types'
+import { loadSeedsData } from '../utils/loadSeedsData'
 
 interface DateObject {
   iso?: string
@@ -58,30 +57,29 @@ interface Order {
   }
 }
 
-async function loadJSON<T>(filePath: string): Promise<T> {
-  try {
-    const fullPath = join(process.cwd(), filePath)
-    const content = await readFile(fullPath, 'utf-8')
-    return JSON.parse(content) as T
-  } catch (error) {
-    console.error(`Error loading ${filePath}:`, error)
-    throw error
-  }
-}
-
 export default eventHandler(async (event) => {
   const query = getQuery(event)
   const rangeStart = query.rangeStart ? new Date(query.rangeStart as string) : null
   const rangeEnd = query.rangeEnd ? new Date(query.rangeEnd as string) : null
 
   try {
-    // Carrega os dados de pedidos
-    const orders = await loadJSON<Order[]>('tmp/Hackathon 2025-11-09/orders-2.json')
+    // Carrega os dados de pedidos (tenta S3 primeiro, depois local)
+    const orders = await loadSeedsData<Order[]>(
+      'orders-2.json',
+      'tmp/Hackathon 2025-11-09/orders-2.json',
+      (data: unknown) => {
+        const obj = data as { orders?: Order[] } | Order[]
+        return Array.isArray(obj) ? obj : (obj.orders || [])
+      }
+    )
+
+    // Garante que orders é um array
+    const ordersArray = Array.isArray(orders) ? orders : []
 
     // Filtra por período se fornecido
-    let filteredOrders = orders
+    let filteredOrders = ordersArray
     if (rangeStart && rangeEnd) {
-      filteredOrders = orders.filter((order) => {
+      filteredOrders = ordersArray.filter((order) => {
         const orderDate = parseDate(order.createdAt)
         return isDateInRange(orderDate, rangeStart, rangeEnd)
       })

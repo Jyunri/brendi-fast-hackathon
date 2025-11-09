@@ -1,5 +1,5 @@
 import type { Feedback } from '~/types'
-import loadJson from '~/utils/loadJson'
+import { loadSeedsData } from '../utils/loadSeedsData'
 
 interface RawTimestamp {
   _date?: boolean
@@ -34,7 +34,10 @@ const mapFeedback = (entry: RawFeedback): Feedback => ({
 
 export default eventHandler(async () => {
   try {
-    const feedbacks = await loadJson<RawFeedback[]>('tmp/Hackathon 2025-11-09/feedbacks.json')
+    const feedbacks = await loadSeedsData<RawFeedback[]>(
+      'feedbacks.json',
+      'tmp/Hackathon 2025-11-09/feedbacks.json'
+    )
     return feedbacks.map(mapFeedback)
   } catch (error) {
     console.error('Error loading feedbacks:', error)

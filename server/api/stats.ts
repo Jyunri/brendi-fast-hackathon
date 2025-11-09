@@ -1,6 +1,5 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { Stat } from '~/types'
+import { loadSeedsData } from '../utils/loadSeedsData'
 
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', {
@@ -39,17 +38,6 @@ function isDateInRange(date: Date | null, start: Date, end: Date): boolean {
   return date >= start && date <= end
 }
 
-async function loadJSON<T>(filePath: string): Promise<T> {
-  try {
-    const fullPath = join(process.cwd(), filePath)
-    const content = await readFile(fullPath, 'utf-8')
-
-    return JSON.parse(content) as T
-  } catch (error) {
-    console.error(`Error loading ${filePath}:`, error)
-    throw error
-  }
-}
 
 interface Order {
   id?: string
@@ -73,11 +61,24 @@ export default eventHandler(async (event) => {
   const rangeEnd = query.rangeEnd ? new Date(query.rangeEnd as string) : null
 
   try {
-    // Carrega os dados
+    // Carrega os dados (tenta S3 primeiro, depois local)
     const [orders, consumers, menuEvents] = await Promise.all([
-      loadJSON<Order[]>('tmp/Hackathon 2025-11-09/orders-2.json'),
-      loadJSON<Consumer[]>('tmp/Hackathon 2025-11-09/store_consumers.json'),
-      loadJSON<MenuEvent[]>('tmp/Hackathon 2025-11-09/menu_events_last_30_days.json')
+      loadSeedsData<Order[]>(
+        'orders-2.json',
+        'tmp/Hackathon 2025-11-09/orders-2.json',
+        (data: unknown) => {
+          const obj = data as { orders?: Order[] } | Order[]
+          return Array.isArray(obj) ? obj : (obj.orders || [])
+        }
+      ),
+      loadSeedsData<Consumer[]>(
+        'store_consumers.json',
+        'tmp/Hackathon 2025-11-09/store_consumers.json'
+      ),
+      loadSeedsData<MenuEvent[]>(
+        'menu_events_last_30_days.json',
+        'tmp/Hackathon 2025-11-09/menu_events_last_30_days.json'
+      )
     ])
 
     // Filtra por período se fornecido

@@ -79,6 +79,9 @@ const columns: TableColumn<Sale>[] = [
 </script>
 
 <template>
+  <p class="text-md font-semibold text-muted mt-8 mb-2">
+    Ultimos 10 pedidos
+  </p>
   <UTable
     :data="data.slice(0, 10)"
     :columns="columns"

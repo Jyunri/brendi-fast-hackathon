@@ -10,7 +10,7 @@ const ratingFilter = ref<RatingFilter>('all')
 
 const { data, pending, error, refresh } = await useFetch<Feedback[]>('/api/feedbacks', {
   default: () => [],
-  lazy: false
+  lazy: true
 })
 
 const sortedFeedbacks = computed(() => {
@@ -51,7 +51,7 @@ const latestFeedbackLabel = computed(() => {
   return formatDateTime(feedback.createdAt || feedback.updatedAt)
 })
 
-const categoryOptions = computed(() => {
+const _categoryOptions = computed(() => {
   const unique = new Set(sortedFeedbacks.value.map(item => item.category).filter(Boolean))
   return [
     { label: 'Todas categorias', value: 'all' },
@@ -159,7 +159,7 @@ function formatDateTime(date: string | null | undefined) {
             color="neutral"
             variant="ghost"
             :loading="pending"
-            @click="refresh"
+            @click="() => refresh()"
           >
             Atualizar
           </UButton>
@@ -205,20 +205,20 @@ function formatDateTime(date: string | null | undefined) {
       </UAlert>
 
       <section class="mt-6 space-y-4">
-        <template v-if="pending">
-          <UCard v-for="n in 4" :key="n" class="space-y-4">
+        <div v-if="pending">
+          <UCard v-for="n in 4" :key="n" class="space-y-4 mb-4">
             <USkeleton class="h-4 w-1/3" />
             <USkeleton class="h-6 w-1/2" />
             <USkeleton class="h-4 w-full" />
             <USkeleton class="h-4 w-2/3" />
           </UCard>
-        </template>
+        </div>
 
-        <template v-else-if="filteredFeedbacks.length">
+        <div v-else-if="filteredFeedbacks.length">
           <UCard
             v-for="feedback in filteredFeedbacks"
             :key="feedback.id"
-            class="space-y-4"
+            class="space-y-4 mb-4"
           >
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -262,9 +262,9 @@ function formatDateTime(date: string | null | undefined) {
               </span>
             </div>
           </UCard>
-        </template>
+        </div>
 
-        <template v-else>
+        <div v-else>
           <UAlert
             icon="i-lucide-message-square"
             color="neutral"
@@ -273,7 +273,7 @@ function formatDateTime(date: string | null | undefined) {
           >
             {{ emptyStateMessage }}
           </UAlert>
-        </template>
+        </div>
       </section>
     </template>
   </UDashboardPanel>

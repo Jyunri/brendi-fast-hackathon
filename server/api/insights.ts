@@ -175,9 +175,64 @@ export default eventHandler(async (): Promise<InsightResponse> => {
 
     const llmInsights = await requestCampaignInsightFromLLM(summaries)
     // Pega um insight aleatorio do array, ou fallback para o determinístico
+
+    const mockedInsights
+      = [{ id: '1',
+        title: 'Campanhas Superclient com Alto Valor Total',
+        metric: 'totalOrderValue',
+        summary:
+       'As campanhas direcionadas a superclients têm gerado um alto valor total de pedidos, com destaque para a campanha com ID \'Rzm9nUWBQve5fDaLPeDu\', que gerou R$ 1.483.600.',
+        recommendation:
+       'Aumentar o foco em campanhas para superclients, talvez oferecendo promoções exclusivas ou produtos de maior valor.',
+        evidence:
+       'Campanhas superclient apresentaram os maiores valores totais de pedidos, com várias campanhas ultrapassando R$ 400.000.',
+        severity: 'high' },
+      { id: '2',
+        title: 'Baixa Taxa de Conversão Geral',
+        metric: 'conversionRate',
+        summary:
+       'Todas as campanhas analisadas apresentaram uma taxa de conversão de 0%, indicando uma falha significativa na conversão de leads em vendas.',
+        recommendation:
+       'Revisar as estratégias de comunicação e ofertas nas campanhas, além de realizar testes A/B para identificar o que pode ser otimizado.',
+        evidence:
+       'Nenhuma das campanhas registrou conversões, apesar de um volume considerável de envios.',
+        severity: 'high' },
+      { id: '3',
+        title: 'Campanhas Inativas com Baixo Retorno',
+        metric: 'ordersDelivered',
+        summary:
+       'Campanhas direcionadas a segmentos inativos têm mostrado resultados fracos, com apenas 5 pedidos entregues na campanha \'koDWZCYKtF0DgequojdX\'.',
+        recommendation:
+       'Considerar a descontinuação de campanhas para segmentos inativos ou reformular a abordagem para reengajamento.',
+        evidence:
+       'As campanhas inativas têm um desempenho consistentemente baixo em termos de pedidos entregues e valor total.',
+        severity: 'medium' },
+      { id: '4',
+        title: 'Oportunidade em Segmentos de Curiosos',
+        metric: 'ordersDelivered',
+        summary:
+       'As campanhas direcionadas a curiosos, embora com baixo desempenho, têm potencial para melhorar, especialmente considerando que algumas entregaram pedidos.',
+        recommendation:
+       'Explorar ofertas mais atraentes ou conteúdo que desperte mais interesse nesse segmento, talvez utilizando storytelling ou provas sociais.',
+        evidence:
+       'Campanhas como \'enthusiast-1750277006531\' mostraram alguma entrega, mas com espaço para crescimento.',
+        severity: 'medium' },
+      { id: '5',
+        title: 'Campanhas Hot com Baixo Retorno',
+        metric: 'totalOrderValue',
+        summary:
+       'As campanhas direcionadas a clientes quentes têm mostrado um baixo retorno em termos de valor total de pedidos, com a maioria gerando menos de R$ 100.000.',
+        recommendation:
+       'Reavaliar as ofertas e a segmentação para clientes quentes, talvez introduzindo promoções mais agressivas ou produtos de maior apelo.',
+        evidence:
+       'Campanhas hot, apesar de serem direcionadas a um público potencialmente mais receptivo, não estão gerando resultados significativos.',
+        severity: 'medium' }]
+
     const insight = llmInsights.length > 0
       ? llmInsights[Math.floor(Math.random() * llmInsights.length)]
-      : buildDeterministicCampaignInsight(campaigns)
+      : mockedInsights.length > 0
+        ? mockedInsights[Math.floor(Math.random() * mockedInsights.length)]
+        : buildDeterministicCampaignInsight(campaigns)
 
     return {
       generatedAt: new Date().toISOString(),

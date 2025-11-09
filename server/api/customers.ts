@@ -1,9 +1,12 @@
 import type { User } from '~/types'
-import loadJson from '~/utils/loadJson'
+import { loadSeedsData } from '../utils/loadSeedsData'
 
 export default eventHandler(async () => {
   try {
-    const consumers = await loadJson<User[]>('tmp/Hackathon 2025-11-09/store_consumers.json')
+    const consumers = await loadSeedsData<User[]>(
+      'store_consumers.json',
+      'tmp/Hackathon 2025-11-09/store_consumers.json'
+    )
 
     const customers = consumers.map(consumer => ({
       id: consumer.id,
