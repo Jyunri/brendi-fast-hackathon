@@ -14,10 +14,14 @@ const UCheckbox = resolveComponent('UCheckbox')
 const toast = useToast()
 const table = useTemplateRef('table')
 
-const columnFilters = ref([{
-  id: 'email',
-  value: ''
-}])
+// Custom filter function for email
+function emailFilterFn(row: Row<User>, columnId: string, filterValue: string) {
+  if (!filterValue) return true
+  const email = row.getValue(columnId)?.toString().toLowerCase() || ''
+  return email.includes(filterValue.toLowerCase())
+}
+
+const columnFilters = ref([])
 const columnVisibility = ref()
 const rowSelection = ref({ 1: true })
 
@@ -126,7 +130,8 @@ const columns: TableColumn<User>[] = [
         class: '-mx-2.5',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
       })
-    }
+    },
+    filterFn: emailFilterFn
   },
   {
     accessorKey: 'location',
