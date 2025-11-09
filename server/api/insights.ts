@@ -173,8 +173,11 @@ export default eventHandler(async (): Promise<InsightResponse> => {
     const campaigns = await getCampaignsWithResults()
     const summaries = buildCampaignResultSummaries(campaigns)
 
-    const llmInsight = await requestCampaignInsightFromLLM(summaries)
-    const insight = llmInsight ?? buildDeterministicCampaignInsight(campaigns)
+    const llmInsights = await requestCampaignInsightFromLLM(summaries)
+    // Pega um insight aleatorio do array, ou fallback para o determinístico
+    const insight = llmInsights.length > 0
+      ? llmInsights[Math.floor(Math.random() * llmInsights.length)]
+      : buildDeterministicCampaignInsight(campaigns)
 
     return {
       generatedAt: new Date().toISOString(),
