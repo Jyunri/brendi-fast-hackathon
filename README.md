@@ -38,6 +38,7 @@ Vercel
 - Utiliza LLM para gerar segmentações de clientes baseadas no contexto fornecido pelo usuario
 - O LLM gera entre 3 e 5 segmentos distintos, cada um com um foco diferente
 - Caso nao seja possivel gerar segmentos usando LLM, o fallback é um segmento deterministico
+- Suporte para baixar segmentos em CSV
 
 ## Dados
 
