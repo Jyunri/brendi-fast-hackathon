@@ -14,6 +14,16 @@ const links = [[{
     open.value = false
   }
 }, {
+  label: 'Campaings',
+  icon: 'i-lucide-target',
+  to: '/campaigns',
+  badge: '4',
+  onSelect: () => {
+    open.value = false
+  }
+},
+
+{
   label: 'Inbox',
   icon: 'i-lucide-inbox',
   to: '/inbox',
