@@ -12,9 +12,22 @@ const getTimestamp = (campaign: Campaign) => {
   return date ? new Date(date).getTime() : 0
 }
 
-const campaigns = computed(() =>
-  [...(data.value || [])].sort((a, b) => getTimestamp(b) - getTimestamp(a))
-)
+const filterId = ref('')
+
+const campaigns = computed(() => {
+  const allCampaigns = [...(data.value || [])].sort((a, b) => getTimestamp(b) - getTimestamp(a))
+
+  if (!filterId.value.trim()) {
+    return allCampaigns
+  }
+
+  const searchTerm = filterId.value.trim().toLowerCase()
+  return allCampaigns.filter((campaign) => {
+    const campaignId = campaign.campaignId?.toLowerCase() || ''
+    const id = campaign.id?.toString().toLowerCase() || ''
+    return campaignId.includes(searchTerm) || id.includes(searchTerm)
+  })
+})
 
 const formatDate = (date: string | null) => {
   if (!date) return 'Data indefinida'
@@ -207,6 +220,25 @@ const selectedMessage = computed(() =>
                 </div>
               </div>
             </div>
+          </UCard>
+
+          <UCard>
+            <UInput
+              v-model="filterId"
+              placeholder="Filtrar por ID da campanha..."
+              icon="i-lucide-search"
+            >
+              <template #trailing>
+                <UButton
+                  v-if="filterId"
+                  icon="i-lucide-x"
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  @click="filterId = ''"
+                />
+              </template>
+            </UInput>
           </UCard>
 
           <UAlert
