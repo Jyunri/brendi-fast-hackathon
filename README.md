@@ -15,6 +15,13 @@ Vercel
 
 ## Features
 
+### Analytics
+
+- Dados de clientes, conversões, receitas e pedidos
+- Gráfico de receita por dia/semana/mês
+- Listagem de campanhas com visualizacao em kanban
+- Listagem de feedbacks de clientes
+
 ### Insights
 
 - Utiliza LLM para gerar insights acionáveis baseados no desempenho recente das campanhas

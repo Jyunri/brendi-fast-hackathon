@@ -88,6 +88,17 @@ export interface InsightResponse {
   insight: Insight
 }
 
+export interface CampaignAssistantRequest {
+  context: string
+}
+
+export interface CampaignAssistantResponse {
+  generatedAt: string
+  message: string
+  usedContext: string | null
+  source: 'llm' | 'fallback'
+}
+
 export interface CampaignDateValue {
   _date?: boolean
   _timestamp?: boolean

@@ -34,6 +34,10 @@ Regras:
 - Para os pendings, verifique o que vale a pena manter e o que vale a pena cancelar.
 - Responda apenas com JSON no formato especificado (sem blocos de markdown ou texto adicional).`
 
+const ASSISTANT_SYSTEM_PROMPT = `Você é um estrategista de CRM e growth.
+Ajude times de marketing a interpretar campanhas recentes e gere recomendações práticas e curtas.
+Mostre empatia profissional, escreva sempre em português e encerre com próximos passos objetivos.`
+
 function buildPrompt(summaries: CampaignResultSummary[]): string {
   return [
     'Dados recentes das campanhas (ordenados por atualização mais recente):',
@@ -41,6 +45,21 @@ function buildPrompt(summaries: CampaignResultSummary[]): string {
     'Retorne apenas um JSON com o formato:',
     '{ "insights": [{ "id": string, "title": string, "metric": string, "summary": string, "recommendation": string, "evidence": string, "severity": "low" | "medium" | "high" }, ...] }',
     'IMPORTANTE: Retorne entre 3 e 5 insights distintos, cada um com um foco diferente.'
+  ].join('\n\n')
+}
+
+function buildAssistantPrompt(
+  summaries: CampaignResultSummary[],
+  context: string | null
+): string {
+  return [
+    'Você está analisando campanhas recentes com os seguintes dados resumidos:',
+    JSON.stringify(summaries.slice(0, 80), null, 2),
+    context
+      ? `Contexto extra fornecido pelo usuário: """${context}""". Considere esse objetivo ao responder.`
+      : 'O usuário não forneceu contexto adicional. Sugira como você pode ajudar usando os dados das campanhas.',
+    'Responda com dois parágrafos curtos explicando a oportunidade e possíveis riscos.',
+    'Em seguida, inclua uma lista numerada com até 3 próximos passos acionáveis.'
   ].join('\n\n')
 }
 
@@ -172,5 +191,59 @@ export async function requestCampaignInsightFromLLM(
   } catch (error) {
     console.error('LLM insights generation failed:', error)
     return []
+  }
+}
+
+export async function requestCampaignAssistantResponse(
+  summaries: CampaignResultSummary[],
+  context: string | null
+): Promise<string | null> {
+  if (!summaries.length) return null
+
+  const config = useRuntimeConfig()
+  const llmConfig = config.llm || {}
+
+  if (!llmConfig.apiUrl || !llmConfig.apiKey) {
+    console.error('LLM API URL or API Key is not configured')
+    return null
+  }
+
+  try {
+    interface LLMResponse {
+      choices?: Array<{
+        message?: {
+          content?: string
+        }
+      }>
+    }
+
+    const response = await $fetch<LLMResponse>(llmConfig.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${llmConfig.apiKey}`
+      },
+      body: {
+        model: llmConfig.model || 'gpt-4o-mini',
+        temperature: 0.35,
+        messages: [
+          {
+            role: 'system',
+            content: ASSISTANT_SYSTEM_PROMPT
+          },
+          {
+            role: 'user',
+            content: buildAssistantPrompt(summaries, context)
+          }
+        ]
+      }
+    })
+
+    const content = response?.choices?.[0]?.message?.content
+    if (!content) return null
+    return sanitizeLLMContent(content)
+  } catch (error) {
+    console.error('LLM assistant generation failed:', error)
+    return null
   }
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Campaign } from '~/types'
 import CampaignInsight from '~/components/campaings/CampaignInsight.vue'
+import CampaignAssistantChat from '~/components/campaings/CampaignAssistantChat.vue'
 
 const { data, pending, error, refresh } = await useFetch<Campaign[]>('/api/campagins', {
   default: () => [],
@@ -165,7 +166,8 @@ const selectedMessage = computed(() =>
 </script>
 
 <template>
-  <UDashboardPanel id="campaigns">
+  <div class="relative">
+    <UDashboardPanel id="campaigns">
     <template #header>
       <UDashboardNavbar title="Campanhas">
         <template #leading>
@@ -487,5 +489,8 @@ const selectedMessage = computed(() =>
         </template>
       </UModal>
     </template>
-  </UDashboardPanel>
+    </UDashboardPanel>
+
+    <CampaignAssistantChat />
+  </div>
 </template>
