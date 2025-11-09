@@ -16,7 +16,7 @@ const items = [[{
 }]] satisfies DropdownMenuItem[][]
 
 const range = shallowRef<Range>({
-  start: sub(new Date(), { days: 180 }),
+  start: sub(new Date(), { days: 90 }),
   end: new Date()
 })
 const period = ref<Period>('daily')

@@ -261,14 +261,6 @@ const selectedMessage = computed(() =>
                         >
                           {{ getTargetingBadge(campaign.targeting).label }}
                         </UBadge>
-                        <UBadge
-                          color="neutral"
-                          variant="subtle"
-                          size="xs"
-                          class="capitalize"
-                        >
-                          {{ campaign.type }}
-                        </UBadge>
                       </div>
                       <p class="text-sm font-medium text-highlighted">
                         {{ campaign.campaignId }}
@@ -335,7 +327,7 @@ const selectedMessage = computed(() =>
           </UCard>
         </section>
 
-        <section class="space-y-4">
+        <section>
           <CampaignInsight />
         </section>
       </div>

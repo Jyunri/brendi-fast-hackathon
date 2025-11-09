@@ -135,7 +135,7 @@ const template = (d: DataRecord) => `${formatDate(d.date)}: ${formatNumber(d.amo
     <template #header>
       <div>
         <p class="text-xs text-muted uppercase mb-1.5">
-          Revenue
+          Revenue (includes all status)
         </p>
         <p class="text-3xl text-highlighted font-semibold">
           {{ formatNumber(total) }}

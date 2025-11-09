@@ -36,7 +36,7 @@ const loadInsight = async () => {
 </script>
 
 <template>
-  <UCard class="mt-6">
+  <UCard>
     <template #header>
       <div class="flex flex-wrap items-center gap-3 justify-between">
         <div>
