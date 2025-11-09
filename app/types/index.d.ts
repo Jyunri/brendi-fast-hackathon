@@ -12,6 +12,18 @@ export interface User {
   location: string
 }
 
+export interface Feedback {
+  id: string
+  orderId: string
+  storeId: string
+  storeConsumerId: string
+  category: string
+  rating: number
+  comment: string
+  createdAt: string | null
+  updatedAt: string | null
+}
+
 export interface Mail {
   id: number
   unread?: boolean
