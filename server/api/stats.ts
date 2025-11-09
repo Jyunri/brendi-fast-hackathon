@@ -75,7 +75,7 @@ export default eventHandler(async (event) => {
   try {
     // Carrega os dados
     const [orders, consumers, menuEvents] = await Promise.all([
-      loadJSON<Order[]>('tmp/Hackathon 2025-11-09/orders-short.json'),
+      loadJSON<Order[]>('tmp/Hackathon 2025-11-09/orders-2.json'),
       loadJSON<Consumer[]>('tmp/Hackathon 2025-11-09/store_consumers.json'),
       loadJSON<MenuEvent[]>('tmp/Hackathon 2025-11-09/menu_events_last_30_days.json')
     ])

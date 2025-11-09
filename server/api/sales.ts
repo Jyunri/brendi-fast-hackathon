@@ -76,7 +76,7 @@ export default eventHandler(async (event) => {
 
   try {
     // Carrega os dados de pedidos
-    const orders = await loadJSON<Order[]>('tmp/Hackathon 2025-11-09/orders-short.json')
+    const orders = await loadJSON<Order[]>('tmp/Hackathon 2025-11-09/orders-2.json')
 
     // Filtra por período se fornecido
     let filteredOrders = orders

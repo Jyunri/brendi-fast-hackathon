@@ -69,7 +69,7 @@ const columns: TableColumn<Sale>[] = [
 
       const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'EUR'
+        currency: 'BRL'
       }).format(amount)
 
       return h('div', { class: 'text-right font-medium' }, formatted)
