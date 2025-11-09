@@ -58,3 +58,20 @@ export interface Range {
   start: Date
   end: Date
 }
+
+export type InsightSeverity = 'low' | 'medium' | 'high'
+
+export interface Insight {
+  id: string
+  title: string
+  metric: string
+  summary: string
+  recommendation: string
+  evidence: string
+  severity: InsightSeverity
+}
+
+export interface InsightResponse {
+  generatedAt: string
+  insight: Insight
+}
