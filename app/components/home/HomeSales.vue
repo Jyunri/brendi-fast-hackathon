@@ -80,7 +80,7 @@ const columns: TableColumn<Sale>[] = [
 
 <template>
   <UTable
-    :data="data"
+    :data="data.slice(0, 10)"
     :columns="columns"
     class="shrink-0"
     :ui="{

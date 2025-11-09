@@ -1,7 +1,15 @@
-import type { Campaign, CampaignDateValue, CampaignVoucher, CampaignMedia } from '~/types'
+import type {
+  Campaign,
+  CampaignDateValue,
+  CampaignVoucher,
+  CampaignMedia,
+  CampaignResult,
+  CampaignSendStatus
+} from '~/types'
 import loadJson from '~/utils/loadJson'
 
 type DateLike = string | CampaignDateValue | null | undefined
+type NumberLike = number | string | null | undefined
 
 interface RawCampaign {
   id: string
@@ -29,6 +37,36 @@ interface RawCampaignMedia {
 }
 
 interface RawCampaignVoucher extends Partial<CampaignVoucher> {}
+
+interface RawSendStatus {
+  errorCount?: NumberLike
+  totalCount?: NumberLike
+  partialCount?: NumberLike
+  successCount?: NumberLike
+}
+
+interface RawCampaignResult {
+  id: string
+  campaign_id: string
+  store_id: string
+  menu_slug?: string | null
+  store_phone?: string | null
+  targeting: string
+  is_custom?: boolean
+  payload?: string | string[] | null
+  media?: RawCampaignMedia | null
+  voucher?: RawCampaignVoucher | null
+  send_status?: RawSendStatus | null
+  conversion_rate?: NumberLike
+  evasion_rate?: NumberLike
+  order_ids?: string[] | null
+  orders_delivered?: NumberLike
+  total_order_value?: NumberLike
+  timestamp?: DateLike
+  end_timestamp?: DateLike
+  created_at?: DateLike
+  updated_at?: DateLike
+}
 
 function normalizeDate(date: DateLike): string | null {
   if (!date) return null
@@ -90,7 +128,55 @@ function normalizeVoucher(voucher: RawCampaignVoucher | null | undefined): Campa
   }
 }
 
-function mapCampaign(raw: RawCampaign): Campaign {
+function parseNumber(value: NumberLike): number | null {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeSendStatus(status: RawSendStatus | null | undefined): CampaignSendStatus | null {
+  if (!status) return null
+  return {
+    errorCount: parseNumber(status.errorCount) ?? 0,
+    totalCount: parseNumber(status.totalCount) ?? 0,
+    partialCount: parseNumber(status.partialCount) ?? 0,
+    successCount: parseNumber(status.successCount) ?? 0
+  }
+}
+
+function mapResult(raw: RawCampaignResult): CampaignResult {
+  return {
+    id: raw.id,
+    campaignId: raw.campaign_id,
+    storeId: raw.store_id,
+    targeting: raw.targeting,
+    menuSlug: raw.menu_slug ?? null,
+    storePhone: raw.store_phone ?? null,
+    isCustom: Boolean(raw.is_custom),
+    payload: parsePayload(raw.payload),
+    media: normalizeMedia(raw.media),
+    voucher: normalizeVoucher(raw.voucher),
+    sendStatus: normalizeSendStatus(raw.send_status),
+    conversionRate: parseNumber(raw.conversion_rate),
+    evasionRate: parseNumber(raw.evasion_rate),
+    orderIds: raw.order_ids ?? null,
+    ordersDelivered: parseNumber(raw.orders_delivered),
+    totalOrderValue: parseNumber(raw.total_order_value),
+    timestamp: normalizeDate(raw.timestamp),
+    endTimestamp: normalizeDate(raw.end_timestamp),
+    createdAt: normalizeDate(raw.created_at),
+    updatedAt: normalizeDate(raw.updated_at)
+  }
+}
+
+function getResultTimestamp(result: CampaignResult | null | undefined): number {
+  if (!result) return 0
+  const refDate = result.updatedAt || result.endTimestamp || result.timestamp || result.createdAt
+  return refDate ? new Date(refDate).getTime() : 0
+}
+
+function mapCampaign(raw: RawCampaign, result?: CampaignResult | null): Campaign {
   return {
     id: raw.id,
     campaignId: raw.campaign_id,
@@ -108,14 +194,29 @@ function mapCampaign(raw: RawCampaign): Campaign {
     targeting: raw.targeting,
     type: raw.type,
     useVoucher: raw.use_voucher ?? false,
-    voucher: normalizeVoucher(raw.voucher)
+    voucher: normalizeVoucher(raw.voucher),
+    results: result ?? null
   }
 }
 
 export default eventHandler(async () => {
   try {
-    const campaigns = await loadJson<RawCampaign[]>('tmp/Hackathon 2025-11-09/campaigns.json')
-    return campaigns.map(mapCampaign)
+    const [campaigns, results] = await Promise.all([
+      loadJson<RawCampaign[]>('tmp/Hackathon 2025-11-09/campaigns.json'),
+      loadJson<RawCampaignResult[]>('tmp/Hackathon 2025-11-09/campaigns_results.json')
+    ])
+
+    const resultMap = new Map<string, CampaignResult>()
+
+    results.forEach((rawResult) => {
+      const mapped = mapResult(rawResult)
+      const existing = resultMap.get(mapped.campaignId)
+      if (!existing || getResultTimestamp(mapped) >= getResultTimestamp(existing)) {
+        resultMap.set(mapped.campaignId, mapped)
+      }
+    })
+
+    return campaigns.map(raw => mapCampaign(raw, resultMap.get(raw.campaign_id)))
   } catch (error) {
     console.error('Error loading campaigns:', error)
     return []

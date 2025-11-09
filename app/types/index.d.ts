@@ -119,4 +119,35 @@ export interface Campaign {
   type: string
   useVoucher: boolean
   voucher: CampaignVoucher | null
+  results: CampaignResult | null
+}
+
+export interface CampaignSendStatus {
+  errorCount: number
+  totalCount: number
+  partialCount: number
+  successCount: number
+}
+
+export interface CampaignResult {
+  id: string
+  campaignId: string
+  storeId: string
+  targeting: string
+  menuSlug: string | null
+  storePhone: string | null
+  isCustom: boolean
+  payload: string[]
+  media: CampaignMedia | null
+  voucher: CampaignVoucher | null
+  sendStatus: CampaignSendStatus | null
+  conversionRate: number | null
+  evasionRate: number | null
+  orderIds: string[] | null
+  ordersDelivered: number | null
+  totalOrderValue: number | null
+  timestamp: string | null
+  endTimestamp: string | null
+  createdAt: string | null
+  updatedAt: string | null
 }

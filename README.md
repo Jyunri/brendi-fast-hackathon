@@ -16,3 +16,4 @@ Dificuldade:
 
 Tamanho do json nao processavel
 - Workaround inicial: pegar somente o sample dos pedidos iniciais
+- Workaround 2: script para sanitizar os pedidos salvando apenas campos necessarios nos analitycs

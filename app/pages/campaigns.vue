@@ -49,14 +49,14 @@ const statusLabels: Record<string, string> = {
   failed: 'Com erro'
 }
 
-const statusOrder = ['running', 'scheduled', 'processing', 'completed', 'paused', 'cancelled', 'failed']
+const statusOrder = ['pending', 'running', 'scheduled', 'processing', 'completed', 'paused', 'cancelled', 'failed']
 
 const targetingBadges: Record<string, { label: string, color: string, icon: string }> = {
   recurrent: { label: 'Recorrentes', color: 'primary', icon: 'i-lucide-rotate-cw' },
   loyal: { label: 'Fiéis', color: 'success', icon: 'i-lucide-heart' },
   curious: { label: 'Curiosos', color: 'warning', icon: 'i-lucide-sparkles' },
   beginner: { label: 'Novatos', color: 'info', icon: 'i-lucide-rocket' },
-  enthusiast: { label: 'Entusiastas', color: 'amber', icon: 'i-lucide-fire' }
+  enthusiast: { label: 'Entusiastas', color: 'error', icon: 'i-lucide-fire' }
 }
 
 const normalizedStatus = (status: string) => status?.toLowerCase?.() || 'unknown'
@@ -69,7 +69,7 @@ const kanbanColumns = computed(() => {
     grouped[status].push(campaign)
   })
 
-  const ordered = statusOrder.map((status) => ({
+  const ordered = statusOrder.map(status => ({
     status,
     label: statusLabels[status] || capitalize(status),
     items: grouped[status] || []
@@ -121,10 +121,34 @@ const getTargetingBadge = (targeting: string) => {
 }
 
 const messagePreview = (campaign: Campaign) => {
-  const message = campaign.payload[0]
+  const message = campaign.payload[0] || campaign.results?.payload?.[0]
   if (!message) return 'Sem mensagem configurada.'
   return message.length > 160 ? `${message.slice(0, 157)}...` : message
 }
+
+const formatPercentage = (value: number | null | undefined) => {
+  if (value === null || value === undefined) return '—'
+  return `${(value * 100).toFixed(1).replace('.', ',')}%`
+}
+
+const formatInteger = (value: number | null | undefined) => {
+  if (value === null || value === undefined) return '—'
+  return value.toLocaleString('pt-BR')
+}
+
+const formatCurrencyValue = (value: number | null | undefined) => {
+  if (value === null || value === undefined) return '—'
+  return (value / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 2
+  })
+}
+
+const selectedResult = computed(() => selectedCampaign.value?.results ?? null)
+const selectedMessage = computed(() =>
+  selectedCampaign.value?.payload[0] || selectedResult.value?.payload?.[0] || ''
+)
 </script>
 
 <template>
@@ -252,6 +276,23 @@ const messagePreview = (campaign: Campaign) => {
                       <p class="text-xs text-muted leading-snug">
                         {{ messagePreview(campaign) }}
                       </p>
+                      <div
+                        v-if="campaign.results?.sendStatus"
+                        class="flex items-center justify-between text-xs text-muted"
+                      >
+                        <span class="font-semibold text-highlighted">
+                          {{ formatInteger(campaign.results.sendStatus.successCount) }}
+                        </span>
+                        <span>
+                          de {{ formatInteger(campaign.results.sendStatus.totalCount) }} enviados
+                        </span>
+                      </div>
+                      <div
+                        v-if="campaign.results?.conversionRate !== null && campaign.results?.conversionRate !== undefined"
+                        class="text-xs text-muted"
+                      >
+                        Conversão {{ formatPercentage(campaign.results.conversionRate) }}
+                      </div>
                       <div class="flex items-center justify-between text-xs text-muted">
                         <span>
                           {{ campaign.useVoucher && campaign.voucher ? campaign.voucher.code : 'Sem voucher' }}
@@ -282,7 +323,12 @@ const messagePreview = (campaign: Campaign) => {
               <p class="text-sm text-muted">
                 Quando criar suas primeiras campanhas elas aparecerão aqui automaticamente.
               </p>
-              <UButton color="primary" variant="soft" icon="i-lucide-refresh-ccw" @click="refresh">
+              <UButton
+                color="primary"
+                variant="soft"
+                icon="i-lucide-refresh-ccw"
+                @click="refresh"
+              >
                 Recarregar
               </UButton>
             </div>
@@ -294,9 +340,14 @@ const messagePreview = (campaign: Campaign) => {
         </section>
       </div>
 
-      <UModal v-model="isDetailOpen" :ui="{ width: 'sm:max-w-lg' }">
-        <template v-if="selectedCampaign">
-          <UCard class="space-y-4">
+      <UModal
+        v-model:open="isDetailOpen"
+        :title="selectedCampaign?.campaignId || 'Detalhes da Campanha'"
+        :description="selectedCampaign?.storeId"
+        :ui="{ content: 'w-full max-w-2xl max-h-[90vh] flex flex-col', body: 'flex-1 overflow-y-auto' }"
+      >
+        <template #body>
+          <div v-if="selectedCampaign" class="space-y-4">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p class="text-xs uppercase text-muted">
@@ -332,6 +383,52 @@ const messagePreview = (campaign: Campaign) => {
               </UBadge>
             </div>
 
+            <div v-if="selectedResult" class="space-y-4">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl border border-default/60 p-4 space-y-2">
+                  <p class="text-xs uppercase text-muted">
+                    Envios
+                  </p>
+                  <p class="text-3xl font-semibold text-highlighted">
+                    {{ formatInteger(selectedResult.sendStatus?.totalCount ?? null) }}
+                  </p>
+                  <div class="text-xs text-muted space-y-1">
+                    <p>Sucesso: {{ formatInteger(selectedResult.sendStatus?.successCount ?? null) }}</p>
+                    <p>Falhas: {{ formatInteger(selectedResult.sendStatus?.errorCount ?? null) }}</p>
+                    <p>Parciais: {{ formatInteger(selectedResult.sendStatus?.partialCount ?? null) }}</p>
+                  </div>
+                </div>
+                <div class="rounded-2xl border border-default/60 p-4 space-y-2">
+                  <p class="text-xs uppercase text-muted">
+                    Performance
+                  </p>
+                  <div class="text-sm text-muted space-y-1">
+                    <p>Conversão: <span class="font-semibold text-highlighted">{{ formatPercentage(selectedResult.conversionRate) }}</span></p>
+                    <p>Evasão: <span class="font-semibold text-highlighted">{{ formatPercentage(selectedResult.evasionRate) }}</span></p>
+                    <p>Pedidos entregues: <span class="font-semibold text-highlighted">{{ formatInteger(selectedResult.ordersDelivered) }}</span></p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-default/60 p-4 space-y-2">
+                <p class="text-xs uppercase text-muted">
+                  Resultado financeiro
+                </p>
+                <p class="text-2xl font-semibold text-highlighted">
+                  {{ formatCurrencyValue(selectedResult.totalOrderValue) }}
+                </p>
+                <p class="text-xs text-muted">
+                  Atualizado {{ formatDate(selectedResult.updatedAt || selectedResult.endTimestamp || selectedResult.timestamp) }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="rounded-2xl border border-dashed border-default/60 p-4 text-center text-sm text-muted"
+            >
+              Nenhum resultado disponível para esta campanha ainda.
+            </div>
+
             <div v-if="selectedCampaign.media" class="rounded-lg overflow-hidden bg-muted/30">
               <img
                 :src="selectedCampaign.media.url"
@@ -351,7 +448,9 @@ const messagePreview = (campaign: Campaign) => {
                 <p class="text-xs uppercase font-semibold text-muted/70">
                   Mensagem
                 </p>
-                <p class="whitespace-pre-line">{{ selectedCampaign.payload[0] || 'Sem mensagem configurada.' }}</p>
+                <p class="whitespace-pre-line">
+                  {{ selectedMessage || 'Sem mensagem configurada.' }}
+                </p>
               </div>
             </div>
 
@@ -360,7 +459,7 @@ const messagePreview = (campaign: Campaign) => {
               <span>Segmento: {{ capitalize(selectedCampaign.targeting) }}</span>
               <span>Data programada: {{ formatDate(selectedCampaign.date) }}</span>
             </div>
-          </UCard>
+          </div>
         </template>
       </UModal>
     </template>
