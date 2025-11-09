@@ -10,32 +10,14 @@ const props = defineProps<{
 
 const UBadge = resolveComponent('UBadge')
 
-const sampleEmails = [
-  'james.anderson@example.com',
-  'mia.white@example.com',
-  'william.brown@example.com',
-  'emma.davis@example.com',
-  'ethan.harris@example.com'
-]
-
-const { data } = await useAsyncData('sales', async () => {
-  const sales: Sale[] = []
-  const currentDate = new Date()
-
-  for (let i = 0; i < 5; i++) {
-    const hoursAgo = randomInt(0, 48)
-    const date = new Date(currentDate.getTime() - hoursAgo * 3600000)
-
-    sales.push({
-      id: (4600 - i).toString(),
-      date: date.toISOString(),
-      status: randomFrom(['paid', 'failed', 'refunded']),
-      email: randomFrom(sampleEmails),
-      amount: randomInt(100, 1000)
-    })
+const { data } = await useAsyncData<Sale[]>('sales', async () => {
+  const query = {
+    period: props.period,
+    rangeStart: props.range.start.toISOString(),
+    rangeEnd: props.range.end.toISOString()
   }
 
-  return sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return await $fetch<Sale[]>('/api/sales', { query })
 }, {
   watch: [() => props.period, () => props.range],
   default: () => []
