@@ -75,3 +75,48 @@ export interface InsightResponse {
   generatedAt: string
   insight: Insight
 }
+
+export interface CampaignDateValue {
+  _date?: boolean
+  _timestamp?: boolean
+  iso?: string
+}
+
+export interface CampaignMedia {
+  url: string
+  type: string
+}
+
+export interface CampaignVoucher {
+  code: string
+  type: string
+  active: boolean
+  reward: string | null
+  isDeleted: boolean
+  campaignId: string
+  usesPerUser: number
+  minimumOrder: number
+  fixedDiscount: number
+  firstOrderOnly: boolean
+  percentageDiscount: number
+}
+
+export interface Campaign {
+  id: string
+  campaignId: string
+  storeId: string
+  createdAt: string | null
+  updatedAt: string | null
+  date: string | null
+  description: string | null
+  limit: number | null
+  media: CampaignMedia | null
+  messageContentRisk: string | null
+  messageVolumeRisk: string | null
+  payload: string[]
+  status: string
+  targeting: string
+  type: string
+  useVoucher: boolean
+  voucher: CampaignVoucher | null
+}

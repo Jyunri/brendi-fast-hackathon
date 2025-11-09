@@ -56,13 +56,14 @@ const period = ref<Period>('daily')
           <HomeDateRangePicker v-model="range" class="-ms-1" />
 
           <HomePeriodSelect v-model="period" :range="range" />
+
+          <HomeInsight class="flex-end" />
         </template>
       </UDashboardToolbar>
     </template>
 
     <template #body>
       <HomeStats :period="period" :range="range" />
-
       <HomeChart :period="period" :range="range" />
       <HomeSales :period="period" :range="range" />
     </template>
