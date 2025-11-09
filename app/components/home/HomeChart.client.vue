@@ -63,11 +63,11 @@ const chartData = computed<DataRecord[]>(() => {
   const period = periodComputed.value
   const salesData = sales.value ?? []
 
-  const intervalFactory = ({
+  const intervalFactory = {
     daily: eachDayOfInterval,
     weekly: eachWeekOfInterval,
     monthly: eachMonthOfInterval
-  } as Record<Period, typeof eachDayOfInterval>)
+  } as Record<Period, typeof eachDayOfInterval>
 
   const dates = intervalFactory[period](range)
 

@@ -29,6 +29,10 @@ Vercel
 - O LLM gera entre 3 e 5 insights distintos, cada um com um foco diferente
 - Caso nao seja possivel gerar insights usando LLM, o fallback é um insight deterministico
 
+### Chat Assistant
+
+- Utiliza LLM para gerar respostas baseadas no contexto fornecido pelo usuario
+
 
 ## Dados
 
